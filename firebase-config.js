@@ -13,16 +13,23 @@ function getEnvVar(key) {
     const value = window.ENV[key];
     // Kiểm tra không phải template placeholder
     if (!value.includes('{{') && !value.includes('}}')) {
+      console.log(`✅ Found ${key} from production environment`);
       return value;
+    } else {
+      console.warn(`⚠️ ${key} still contains placeholder: ${value}`);
     }
   }
   
   // 2. Development: Từ localStorage hoặc fallback
   if (typeof localStorage !== 'undefined') {
     const stored = localStorage.getItem(key);
-    if (stored) return stored;
+    if (stored) {
+      console.log(`✅ Found ${key} from localStorage`);
+      return stored;
+    }
   }
   
+  console.error(`❌ Missing environment variable: ${key}`);
   return null;
 }
 
@@ -38,6 +45,16 @@ async function initializeFirebase() {
       messagingSenderId: getEnvVar("VITE_FIREBASE_MESSAGING_SENDER_ID"),
       appId: getEnvVar("VITE_FIREBASE_APP_ID")
     };
+
+    console.log('🔍 Firebase Config Debug:', {
+      hasApiKey: !!firebaseConfig.apiKey,
+      hasAuthDomain: !!firebaseConfig.authDomain,
+      hasProjectId: !!firebaseConfig.projectId,
+      hasStorageBucket: !!firebaseConfig.storageBucket,
+      hasMessagingSenderId: !!firebaseConfig.messagingSenderId,
+      hasAppId: !!firebaseConfig.appId,
+      environment: window.ENV ? 'production' : 'development'
+    });
 
     // Kiểm tra xem có đủ config không
     const hasValidConfig = Object.values(firebaseConfig).every(value => value !== null && value !== undefined && value !== "");

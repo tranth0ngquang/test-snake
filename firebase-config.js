@@ -1,6 +1,7 @@
 // firebase-config.js - Firebase khởi tạo và cấu hình
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js';
-import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+import { getAnalytics } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js';
 
 /**
  * Lấy environment variable từ nhiều nguồn
@@ -43,7 +44,8 @@ async function initializeFirebase() {
       projectId: getEnvVar("VITE_FIREBASE_PROJECT_ID"),
       storageBucket: getEnvVar("VITE_FIREBASE_STORAGE_BUCKET"),
       messagingSenderId: getEnvVar("VITE_FIREBASE_MESSAGING_SENDER_ID"),
-      appId: getEnvVar("VITE_FIREBASE_APP_ID")
+      appId: getEnvVar("VITE_FIREBASE_APP_ID"),
+      measurementId: getEnvVar("VITE_FIREBASE_MEASUREMENT_ID")
     };
 
     console.log('🔍 Firebase Config Debug:', {
@@ -53,6 +55,7 @@ async function initializeFirebase() {
       hasStorageBucket: !!firebaseConfig.storageBucket,
       hasMessagingSenderId: !!firebaseConfig.messagingSenderId,
       hasAppId: !!firebaseConfig.appId,
+      hasMeasurementId: !!firebaseConfig.measurementId,
       environment: window.ENV ? 'production' : 'development'
     });
 
@@ -63,24 +66,36 @@ async function initializeFirebase() {
       // Khởi tạo Firebase
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
+      
+      // Khởi tạo Analytics nếu có measurementId
+      let analytics = null;
+      if (firebaseConfig.measurementId) {
+        try {
+          analytics = getAnalytics(app);
+          console.log('📊 Firebase Analytics initialized successfully');
+        } catch (error) {
+          console.warn('⚠️ Firebase Analytics initialization failed:', error);
+        }
+      }
+      
       console.log('🔥 Firebase initialized successfully');
       console.log('🔑 Config loaded from:', window.ENV ? 'production env' : 'development env');
-      return { app, db, hasFirebase: true };
+      return { app, db, analytics, hasFirebase: true };
     } else {
       console.warn('⚠️ Firebase config incomplete - running in offline mode');
       console.log('Missing config keys:', Object.entries(firebaseConfig)
         .filter(([key, value]) => !value)
         .map(([key]) => key)
       );
-      return { app: null, db: null, hasFirebase: false };
+      return { app: null, db: null, analytics: null, hasFirebase: false };
     }
   } catch (error) {
     console.error('❌ Failed to initialize Firebase:', error);
     console.log('🎮 Game will run without leaderboard features');
-    return { app: null, db: null, hasFirebase: false };
+    return { app: null, db: null, analytics: null, hasFirebase: false };
   }
 }
 
 // Initialize Firebase và export
 const firebaseInit = await initializeFirebase();
-export const { app, db, hasFirebase } = firebaseInit;
+export const { app, db, analytics, hasFirebase } = firebaseInit;

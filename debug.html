@@ -49,7 +49,8 @@
                 'VITE_FIREBASE_PROJECT_ID',
                 'VITE_FIREBASE_STORAGE_BUCKET',
                 'VITE_FIREBASE_MESSAGING_SENDER_ID',
-                'VITE_FIREBASE_APP_ID'
+                'VITE_FIREBASE_APP_ID',
+                'VITE_FIREBASE_MEASUREMENT_ID'
             ];
             
             let validCount = 0;
@@ -89,7 +90,8 @@
                 projectId: getEnvVar("VITE_FIREBASE_PROJECT_ID"),
                 storageBucket: getEnvVar("VITE_FIREBASE_STORAGE_BUCKET"),
                 messagingSenderId: getEnvVar("VITE_FIREBASE_MESSAGING_SENDER_ID"),
-                appId: getEnvVar("VITE_FIREBASE_APP_ID")
+                appId: getEnvVar("VITE_FIREBASE_APP_ID"),
+                measurementId: getEnvVar("VITE_FIREBASE_MEASUREMENT_ID")
             };
 
             const hasValidConfig = Object.values(firebaseConfig).every(value => 
@@ -115,7 +117,8 @@
                     projectId: firebaseConfig.projectId || 'MISSING',
                     storageBucket: firebaseConfig.storageBucket || 'MISSING',
                     messagingSenderId: firebaseConfig.messagingSenderId || 'MISSING',
-                    appId: firebaseConfig.appId ? '***SET***' : 'MISSING'
+                    appId: firebaseConfig.appId ? '***SET***' : 'MISSING',
+                    measurementId: firebaseConfig.measurementId || 'MISSING'
                 }, null, 2) + '</pre>';
 
         } catch (error) {

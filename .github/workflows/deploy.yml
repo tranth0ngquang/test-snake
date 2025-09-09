@@ -41,6 +41,7 @@ jobs:
           GITHUB_VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
           GITHUB_VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           GITHUB_VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          GITHUB_VITE_FIREBASE_MEASUREMENT_ID: ${{ vars.VITE_FIREBASE_MEASUREMENT_ID }}
         run: |
           echo "🔄 Replacing environment variables in env.js..."
           
@@ -54,13 +55,14 @@ jobs:
           sed -i "s/{{VITE_FIREBASE_STORAGE_BUCKET}}/${GITHUB_VITE_FIREBASE_STORAGE_BUCKET}/g" env.js
           sed -i "s/{{VITE_FIREBASE_MESSAGING_SENDER_ID}}/${GITHUB_VITE_FIREBASE_MESSAGING_SENDER_ID}/g" env.js
           sed -i "s/{{VITE_FIREBASE_APP_ID}}/${GITHUB_VITE_FIREBASE_APP_ID}/g" env.js
+          sed -i "s/{{VITE_FIREBASE_MEASUREMENT_ID}}/${GITHUB_VITE_FIREBASE_MEASUREMENT_ID}/g" env.js
           
           echo "✅ Environment variables replaced successfully"
           
           # Show verification (safely)
           echo "📄 env.js verification:"
-          echo "Line 1-15 of env.js after replacement:"
-          head -n 15 env.js
+          echo "Line 1-20 of env.js after replacement:"
+          head -n 20 env.js
           
           # Check if replacements worked
           if grep -q "{{" env.js; then

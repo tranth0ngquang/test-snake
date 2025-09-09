@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Config Debug</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+        .status { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .success { background: #0d7377; }
+        .error { background: #7d1414; }
+        .warning { background: #8b6914; }
+        pre { background: #333; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔥 Firebase Configuration Debug Page</h1>
+    
+    <div id="environment-status"></div>
+    <div id="firebase-config"></div>
+    <div id="test-results"></div>
+
+    <!-- Load environment variables -->
+    <script src="./env.js"></script>
+    
+    <script>
+        function addStatus(message, type = 'success') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            document.body.appendChild(div);
+        }
+
+        // Test 1: Check if env.js loaded
+        addStatus('🔍 Testing environment variables...', 'warning');
+        
+        if (typeof window.ENV === 'undefined') {
+            addStatus('❌ window.ENV is undefined - env.js not loaded properly', 'error');
+        } else {
+            addStatus('✅ window.ENV object exists', 'success');
+            
+            // Show current ENV values
+            const envDiv = document.getElementById('environment-status');
+            envDiv.innerHTML = '<h2>Environment Variables Status:</h2>';
+            
+            const envKeys = [
+                'VITE_FIREBASE_API_KEY',
+                'VITE_FIREBASE_AUTH_DOMAIN', 
+                'VITE_FIREBASE_PROJECT_ID',
+                'VITE_FIREBASE_STORAGE_BUCKET',
+                'VITE_FIREBASE_MESSAGING_SENDER_ID',
+                'VITE_FIREBASE_APP_ID'
+            ];
+            
+            let validCount = 0;
+            envKeys.forEach(key => {
+                const value = window.ENV[key];
+                const isValid = value && !value.includes('{{') && !value.includes('}}');
+                const status = isValid ? '✅' : '❌';
+                const displayValue = isValid ? value.substring(0, 20) + '...' : value;
+                
+                if (isValid) validCount++;
+                
+                envDiv.innerHTML += `<div class="status ${isValid ? 'success' : 'error'}">
+                    ${status} ${key}: ${displayValue}
+                </div>`;
+            });
+            
+            addStatus(`📊 Valid environment variables: ${validCount}/${envKeys.length}`, 
+                validCount === envKeys.length ? 'success' : 'error');
+        }
+
+        // Test 2: Try to load Firebase config
+        try {
+            // Simulate the getEnvVar function
+            function getEnvVar(key) {
+                if (window.ENV && window.ENV[key]) {
+                    const value = window.ENV[key];
+                    if (!value.includes('{{') && !value.includes('}}')) {
+                        return value;
+                    }
+                }
+                return null;
+            }
+
+            const firebaseConfig = {
+                apiKey: getEnvVar("VITE_FIREBASE_API_KEY"),
+                authDomain: getEnvVar("VITE_FIREBASE_AUTH_DOMAIN"),
+                projectId: getEnvVar("VITE_FIREBASE_PROJECT_ID"),
+                storageBucket: getEnvVar("VITE_FIREBASE_STORAGE_BUCKET"),
+                messagingSenderId: getEnvVar("VITE_FIREBASE_MESSAGING_SENDER_ID"),
+                appId: getEnvVar("VITE_FIREBASE_APP_ID")
+            };
+
+            const hasValidConfig = Object.values(firebaseConfig).every(value => 
+                value !== null && value !== undefined && value !== ""
+            );
+
+            if (hasValidConfig) {
+                addStatus('✅ Firebase config is complete and valid', 'success');
+            } else {
+                addStatus('❌ Firebase config is incomplete', 'error');
+                const missing = Object.entries(firebaseConfig)
+                    .filter(([key, value]) => !value)
+                    .map(([key]) => key);
+                addStatus(`Missing: ${missing.join(', ')}`, 'error');
+            }
+
+            // Show config (safely)
+            const configDiv = document.getElementById('firebase-config');
+            configDiv.innerHTML = '<h2>Firebase Config:</h2><pre>' + 
+                JSON.stringify({
+                    apiKey: firebaseConfig.apiKey ? '***SET***' : 'MISSING',
+                    authDomain: firebaseConfig.authDomain || 'MISSING',
+                    projectId: firebaseConfig.projectId || 'MISSING',
+                    storageBucket: firebaseConfig.storageBucket || 'MISSING',
+                    messagingSenderId: firebaseConfig.messagingSenderId || 'MISSING',
+                    appId: firebaseConfig.appId ? '***SET***' : 'MISSING'
+                }, null, 2) + '</pre>';
+
+        } catch (error) {
+            addStatus(`❌ Error testing Firebase config: ${error.message}`, 'error');
+        }
+
+        // Test 3: Check deployment environment
+        const isProduction = window.ENV && window.ENV.VITE_FIREBASE_API_KEY !== "{{VITE_FIREBASE_API_KEY}}";
+        addStatus(`🌍 Environment: ${isProduction ? 'PRODUCTION (GitHub Pages)' : 'DEVELOPMENT'}`, 
+            isProduction ? 'success' : 'warning');
+
+        // Test 4: Check localStorage fallback
+        const localStorageKeys = Object.keys(localStorage).filter(k => k.startsWith('VITE_FIREBASE'));
+        if (localStorageKeys.length > 0) {
+            addStatus(`📱 Found ${localStorageKeys.length} Firebase keys in localStorage`, 'success');
+        } else {
+            addStatus('📱 No Firebase keys in localStorage', 'warning');
+        }
+    </script>
+</body>
+</html>

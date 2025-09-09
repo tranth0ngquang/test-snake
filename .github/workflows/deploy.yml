@@ -18,34 +18,59 @@ concurrency:
 
 jobs:
   deploy:
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Debug environment variables
+        run: |
+          echo "🔍 Debugging environment variables availability..."
+          echo "Available vars context:"
+          echo "VITE_FIREBASE_API_KEY exists: ${{ vars.VITE_FIREBASE_API_KEY != '' }}"
+          echo "VITE_FIREBASE_PROJECT_ID exists: ${{ vars.VITE_FIREBASE_PROJECT_ID != '' }}"
+          
       - name: Replace environment variables in env.js
+        env:
+          GITHUB_VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          GITHUB_VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          GITHUB_VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          GITHUB_VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+          GITHUB_VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          GITHUB_VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
         run: |
           echo "🔄 Replacing environment variables in env.js..."
           
           # Backup original file
           cp env.js env.js.template
           
-          # Replace placeholders with actual values from GitHub environment variables
-          sed -i 's/{{VITE_FIREBASE_API_KEY}}/${{ vars.VITE_FIREBASE_API_KEY }}/g' env.js
-          sed -i 's/{{VITE_FIREBASE_AUTH_DOMAIN}}/${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}/g' env.js
-          sed -i 's/{{VITE_FIREBASE_PROJECT_ID}}/${{ vars.VITE_FIREBASE_PROJECT_ID }}/g' env.js
-          sed -i 's/{{VITE_FIREBASE_STORAGE_BUCKET}}/${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}/g' env.js
-          sed -i 's/{{VITE_FIREBASE_MESSAGING_SENDER_ID}}/${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}/g' env.js
-          sed -i 's/{{VITE_FIREBASE_APP_ID}}/${{ vars.VITE_FIREBASE_APP_ID }}/g' env.js
+          # Method 1: Direct sed replacement with environment variables
+          sed -i "s/{{VITE_FIREBASE_API_KEY}}/${GITHUB_VITE_FIREBASE_API_KEY}/g" env.js
+          sed -i "s/{{VITE_FIREBASE_AUTH_DOMAIN}}/${GITHUB_VITE_FIREBASE_AUTH_DOMAIN}/g" env.js
+          sed -i "s/{{VITE_FIREBASE_PROJECT_ID}}/${GITHUB_VITE_FIREBASE_PROJECT_ID}/g" env.js
+          sed -i "s/{{VITE_FIREBASE_STORAGE_BUCKET}}/${GITHUB_VITE_FIREBASE_STORAGE_BUCKET}/g" env.js
+          sed -i "s/{{VITE_FIREBASE_MESSAGING_SENDER_ID}}/${GITHUB_VITE_FIREBASE_MESSAGING_SENDER_ID}/g" env.js
+          sed -i "s/{{VITE_FIREBASE_APP_ID}}/${GITHUB_VITE_FIREBASE_APP_ID}/g" env.js
           
           echo "✅ Environment variables replaced successfully"
           
-          # Show first few lines for verification (without exposing sensitive data)
-          echo "📄 env.js preview:"
-          head -n 10 env.js | sed 's/[A-Za-z0-9_-]\{10,\}/***HIDDEN***/g'
+          # Show verification (safely)
+          echo "📄 env.js verification:"
+          echo "Line 1-15 of env.js after replacement:"
+          head -n 15 env.js
+          
+          # Check if replacements worked
+          if grep -q "{{" env.js; then
+            echo "⚠️ WARNING: Some placeholders were not replaced!"
+            grep "{{" env.js
+            echo "🔍 Available environment variables:"
+            env | grep GITHUB_VITE || echo "No GITHUB_VITE variables found"
+          else
+            echo "✅ All placeholders successfully replaced"
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
